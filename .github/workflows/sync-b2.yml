@@ -3,6 +3,7 @@ name: Sync images to B2
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   sync:
@@ -10,15 +11,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup rclone
+        uses: AnimMouse/setup-rclone@v1
+
       - name: Configure rclone
-        uses: animus-coop/rclone-config-action@v1
-        with:
-          rclone_config: |
-            [b2]
-            type = b2
-            account = ${{ secrets.B2_KEY_ID }}
-            key = ${{ secrets.B2_APP_KEY }}
-            hard_delete = true
+        run: |
+          mkdir -p ~/.config/rclone
+          cat > ~/.config/rclone/rclone.conf <<EOF
+          [b2]
+          type = b2
+          account = ${{ secrets.B2_KEY_ID }}
+          key = ${{ secrets.B2_APP_KEY }}
+          hard_delete = true
+          EOF
 
       - name: Sync to B2
         run: |
@@ -27,4 +32,5 @@ jobs:
             --exclude ".git/**" \
             --exclude ".github/**" \
             --exclude "*.md" \
-            --fast-list --transfers 8
+            --fast-list --transfers 8 \
+            --verbose
