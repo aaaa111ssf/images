@@ -1,0 +1,30 @@
+name: Sync images to B2
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure rclone
+        uses: animus-coop/rclone-config-action@v1
+        with:
+          rclone_config: |
+            [b2]
+            type = b2
+            account = ${{ secrets.B2_KEY_ID }}
+            key = ${{ secrets.B2_APP_KEY }}
+            hard_delete = true
+
+      - name: Sync to B2
+        run: |
+          rclone sync ./ \
+            b2:${{ secrets.B2_BUCKET }} \
+            --exclude ".git/**" \
+            --exclude ".github/**" \
+            --exclude "*.md" \
+            --fast-list --transfers 8
